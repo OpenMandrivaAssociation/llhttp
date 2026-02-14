@@ -3,20 +3,26 @@
 %bcond bootstrap 0
 
 Name:		llhttp
-Version:	9.3.0
+Version:	9.3.1
 Release:	1
 Summary:	Port of http_parser to llparse
-URL:		https://github.com/nodejs/llhttp
 License:	MIT
 Group:		Development/Libraries/C and C++
-Source0:	%{url}/archive/refs/tags/release/v%{version}/%{name}-release-v%{version}.tar.gz
+URL:		https://github.com/nodejs/llhttp
+Source0:	%{URL}/archive/refs/tags/release/v%{version}/%{name}-release-v%{version}.tar.gz
 # Contains the original TypeScript sources, which we must include in the source
 # RPM per packaging guidelines.
-Source1:	%{url}/archive/v%{version}/llhttp-%{version}.tar.gz
+Source1:	%{URL}/archive/v%{version}/llhttp-%{version}.tar.gz
+
+BuildSystem:	cmake
+BuildOption:	-DCMAKE_INSTALL_PREFIX=%{_prefix}
+BuildOption:	-DCMAKE_INSTALL_SYSCONFDIR=%{_sysconfdir}
+BuildOption:	-DCMAKE_BUILD_TYPE=RelWithDebInfo
+BuildOption:	-DBUILD_SHARED_LIBS=ON
+BuildOption:	-GNinja
 
 BuildRequires:	cmake
 BuildRequires:	ninja
-
 %if %{with bootstrap}
 %if "%{_lib}" == "lib64"
 BuildRequires:  libllhttp.so.%{previous_so_version}()(64bit)
@@ -38,40 +44,21 @@ Requires:	llhttp%{?_isa} = %{?epoch:%{epoch}:}%{version}-%{release}
 The llhttp-devel package contains libraries and header files for
 developing applications that use llhttp.
 
-
-%prep
-%autosetup -n %{name}-release-v%{version}
-
-
-%build
-cmake -B ./build \
-	-DCMAKE_INSTALL_PREFIX=%{_prefix} \
-	-DCMAKE_INSTALL_SYSCONFDIR=%{_sysconfdir} \
-	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
-	-DBUILD_SHARED_LIBS=ON \
-	-G Ninja
-%ninja_build -C build
-
-
-%install
-%ninja_install -C build -v
-
+%install -a
 %if %{with bootstrap}
 cp -vp %{_libdir}/libllhttp.so.%{previous_so_version}{,.*} \
     %{buildroot}%{_libdir}
 %endif
-
 
 %files
 %{_libdir}/libllhttp.so.%{so_version}{,.*}
 %if %{with bootstrap}
 %{_libdir}/libllhttp.so.%{previous_so_version}{,.*}
 %endif
-%license LICENSE
-%doc README.md
-
 
 %files devel
+%doc README.md
+%license LICENSE
 %{_includedir}/llhttp.h
 %{_libdir}/libllhttp.so
 %{_libdir}/pkgconfig/libllhttp.pc
